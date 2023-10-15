@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -55,7 +54,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
-        self.wfile.write(bytes(json.dumps(keys), 'utf-8'))
+        metrics: str = ""
+        if len(keys) > 0:
+            metrics += f"# HELP cold_hot_stake Cold key and hot key stake data\n# TYPE cold_hot_stake gauge\n"
+            for ck in keys:
+                for hk in keys[ck]:
+                    metrics += f'cold_hot_stake{{coldkey="{ck}", hotkey="{hk}"}} {keys[ck][hk]}\n'
+
+        self.wfile.write(bytes(metrics, 'utf-8'))
         return
 
 
